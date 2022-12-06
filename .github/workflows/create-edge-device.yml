@@ -39,6 +39,8 @@ jobs:
 
       - name: Create IoT Edge Device Deployment
         run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+          
           # list existing deployments
           deployment_list=$(az iot edge deployment list --hub-name ${{ github.event.inputs.iothub_name }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
 
