@@ -1,0 +1,9 @@
+# config scripts
+config/csr/
+config/private/
+config/certs/
+config/newcerts/
+config/index.txt*
+config/serial*
+config/temppackages/
+config/packages/*.gz

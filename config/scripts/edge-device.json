@@ -1,0 +1,62 @@
+{
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "modules": {},
+        "runtime": {
+          "settings": {
+            "minDockerVersion": "v1.25"
+          },
+          "type": "docker"
+        },
+        "schemaVersion": "1.1",
+        "systemModules": {
+          "edgeAgent": {
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.4.4",
+              "createOptions": "{\"HostConfig\":{\"Binds\":[\"/iotedge/storage:/iotedge/storage\"]}}"
+            },
+            "type": "docker",
+            "imagePullPolicy": "on-create",
+            "startupOrder": 0,
+            "env": {
+              "storageFolder": {
+                "value": "/iotedge/storage"
+              },
+              "ModuleUpdateMode": {
+                "value": "WaitForAllPulls"
+              }
+            }
+          },
+          "edgeHub": {
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.4.4",
+              "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"443/tcp\":[{\"HostPort\":\"443\"}],\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}]}},\"Binds\":[\"/iotedge/storage:/iotedge/storage\"]}"
+            },
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "imagePullPolicy": "on-create",
+            "startupOrder": 1,
+            "env": {
+              "storageFolder": {
+                "value": "/iotedge/storage"
+              }
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "routes": {
+          "route": "FROM /messages/* INTO $upstream"
+        },
+        "schemaVersion": "1.1",
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
+    }
+  }
+}

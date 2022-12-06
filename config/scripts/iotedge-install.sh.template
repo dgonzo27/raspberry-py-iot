@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "debconf debconf/frontend select Noninteractive" | sudo debconf-set-selections
+
+# variables
+device_cnx_str="<DEVICE_CNX_STR>"
+
+echo "installing packages..."
+curl https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb > ./packages-microsoft-prod.deb
+sudo apt install ./packages-microsoft-prod.deb
+sudo apt-get update
+sudo apt-get install moby-engine
+
+echo "copying docker-dameon.json to /etc/docker/daemon.json..."
+sudo cp -v docker-daemon.json /etc/docker/dameon.json
+sudo systemctl restart docker
+
+"installing iot packages..."
+sudo apt-get install aziot-edge defender-iot-micro-agent-edge
+
+echo "restarting iot edge runtime with new config..."
+echo ""
+sudo iotedge config mp --connection-string '${device_cnx_str}'
+sudo iotedge config apply
+
+echo "done!"
