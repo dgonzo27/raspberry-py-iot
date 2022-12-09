@@ -34,10 +34,10 @@ function package_install()
     cp "${SCRIPT_DIR}/scripts/docker-daemon.json" "${SCRIPT_DIR}/temppackages/docker-daemon.json"
     cp "${SCRIPT_DIR}/scripts/iotedge-install.sh.template" "${SCRIPT_DIR}/temppackages/iotedge-install.sh"
 
-    if [ "$osx" == "true" ]; then
-        sed -i "" "s|<DEVICE_CNX_STR>|${device_cnx_str}|" "${SCRIPT_DIR}/temppackages/iotedge-install.sh"
-    else
+    if [[ -z "$osx" ]]; then
         sed -i "s|<DEVICE_CNX_STR>|${device_cnx_str}|" "${SCRIPT_DIR}/temppackages/iotedge-install.sh"
+    else
+        sed -i "" "s|<DEVICE_CNX_STR>|${device_cnx_str}|" "${SCRIPT_DIR}/temppackages/iotedge-install.sh"
     fi
     echo "prep complete!"
     echo ""
@@ -63,7 +63,7 @@ function package_install()
 #####################
 
 # input args
-device_id="${2}"
+device_id="${1}"
 device_cnx_str="${2}"
 osx="${3}"
 
@@ -73,5 +73,5 @@ prepare_filesystem
 # 2. generate and package scripts
 package_install \
     ${device_id} \
-    ${device_cnx_str}
+    ${device_cnx_str} \
     ${osx}

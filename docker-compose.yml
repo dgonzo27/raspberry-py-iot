@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  sensor-filter:
+    container_name: sensor-filter
+    image: sensor-filter
+    build:
+      context: ./modules/sensor_filter
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - DEV_IOTHUB_DEVICE_CONNECTION_STRING=HostName=dgiothub247.azure-devices.net;DeviceId=raspberry-edge-device;SharedAccessKey=QEv0kCp+JkJM3kK9qK3XEx1X9D6SsBT8mzvKPKmr9Y8=
+    volumes:
+      - ./modules/sensor_filter:/opt

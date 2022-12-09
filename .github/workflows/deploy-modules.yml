@@ -1,4 +1,4 @@
-name: Create Edge Device
+name: Deploy Modules
 
 on:
   workflow_dispatch:
@@ -13,21 +13,51 @@ on:
         required: true
         default: "raspberry-edge-device"
 
+      image_tag_version:
+        description: Docker image tag version.
+        required: true
+        default: "1.0.0"
+
 env:
   deployment_id: "${{ github.event.inputs.edge_device_id }}-deployment"
-  device_json: "config/scripts/edge-device.json"
+  device_json: "modules/edge-device.json"
+  docker_hub_username: "${{ secrets.DOCKERHUB_USER }}"
+  docker_hub_password: "${{ secrets.DOCKERHUB_TOKEN }}"
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
 
 jobs:
-  deploy:
-    name: Deploy IoT Edge Device
+  build-and-push:
+    name: Build and Push Image
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Action
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Docker Hub Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.docker_hub_username }}
+          password: ${{ env.docker_hub_password }}
+
+      - name: Sensor Filter Image
+        run: |
+          docker build -f ./modules/sensor_filter/Dockerfile -t sensor-filter:${{ github.event.inputs.image_tag_version }} ./modules/sensor_filter --no-cache
+          docker image push sensor-filter:${{ github.event.inputs.image_tag_version }}
+
+  update-edge-modules:
+    name: Update Edge Modules
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout Action
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -40,7 +70,7 @@ jobs:
       - name: Create IoT Edge Device Deployment
         run: |
           az config set extension.use_dynamic_install=yes_without_prompt
-          
+
           # list existing deployments
           deployment_list=$(az iot edge deployment list --hub-name ${{ github.event.inputs.iothub_name }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
 
@@ -51,11 +81,13 @@ jobs:
           echo "-----------------------------------------"
 
           cp ${{ env.device_json }} temp.json
+          sed -i "s|<DOCKER_USER>|${{ env.docker_hub_username }}|" temp.json
+          sed -i "s|<IMAGE_TAG_VERSION>|${{ github.event.inputs.image_tag_version }}|" temp.json
 
           # check for matching (existing) deployments
           matched=$( echo "${deployment_list}" | sed -nr "s/\|${{ env.deployment_id }}\|/found/p" )
 
-          # if there's no match, create a new deployment
+          # if there's no match, create a new device deployment
           if [ -z $matched ]; then
             echo "Creating new edge device deployment..."
             az iot edge deployment create \
@@ -65,7 +97,7 @@ jobs:
               --target-condition "tags.deployment='${{ env.deployment_id }}'" \
               --layered
 
-          # otherwise, replace the existing deployment
+          # otherwise, replace the device deployment
           else
             echo "Replacing existing device deployment..."
             az iot edge deployment delete \
