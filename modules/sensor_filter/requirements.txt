@@ -1,0 +1,4 @@
+aiohttp==3.8.1
+asyncssh==2.11.0
+azure-iot-device==2.12.0
+iot-edge-logger==1.0.6

@@ -6,17 +6,21 @@ echo "debconf debconf/frontend select Noninteractive" | sudo debconf-set-selecti
 device_cnx_str="<DEVICE_CNX_STR>"
 
 echo "installing packages..."
-curl https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb > ./packages-microsoft-prod.deb
-sudo apt install ./packages-microsoft-prod.deb
+sudo apt-get install wget -y
+wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O ./packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
 sudo apt-get update
-sudo apt-get install moby-engine
+sudo apt-get install moby-engine -y
 
 echo "copying docker-dameon.json to /etc/docker/daemon.json..."
 sudo cp -v docker-daemon.json /etc/docker/dameon.json
 sudo systemctl restart docker
 
 "installing iot packages..."
-sudo apt-get install aziot-edge defender-iot-micro-agent-edge
+wget https://github.com/Azure/azure-iotedge/releases/download/1.4.3/aziot-identity-service_1.4.1-1_debian10_arm64.deb -O ./aziot-identity-service.deb
+wget https://github.com/Azure/azure-iotedge/releases/download/1.4.3/aziot-edge_1.4.3-1_debian11_arm64.deb -O ./aziot-edge.deb
+sudo dpkg -i aziot-identity-service.deb
+sudo dpkg -i aziot-edge.deb
 
 echo "restarting iot edge runtime with new config..."
 echo ""
