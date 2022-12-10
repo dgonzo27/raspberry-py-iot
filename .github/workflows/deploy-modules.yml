@@ -7,7 +7,7 @@ on:
 env:
   docker_hub_username: "${{ secrets.DOCKERHUB_USER }}"
   docker_hub_password: "${{ secrets.DOCKERHUB_TOKEN }}"
-  iothub_name: "dgiothubuseast001"
+  iothub_name: "${{ secrets.IOTHUB_NAME"
   edge_device_id: "raspberry-edge-device"
   deployment_id: "raspberry-edge-deployment"
   device_json: "config/scripts/edge-device.json"
@@ -21,6 +21,7 @@ jobs:
   build-and-push:
     name: Build and Push Image
     runs-on: ubuntu-latest
+    environment: demo
 
     steps:
       - name: Checkout Action
@@ -51,6 +52,8 @@ jobs:
   update-edge-device:
     name: Update Edge Device
     runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: demo
 
     steps:
       - name: Checkout Action

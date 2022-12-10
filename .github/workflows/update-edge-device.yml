@@ -3,11 +3,6 @@ name: Update Edge Device
 on:
   workflow_dispatch:
     inputs:
-      iothub_name:
-        description: The name of the IoT Hub to receive this deployment.
-        required: true
-        default: "dgiothubuseast001"
-
       edge_device_id:
         description: The ID of the edge device.
         required: true
@@ -32,6 +27,7 @@ jobs:
   update-edge-device:
     name: Update Edge Device
     runs-on: ubuntu-latest
+    environment: demo
 
     steps:
       - name: Checkout Action
@@ -49,7 +45,7 @@ jobs:
           az config set extension.use_dynamic_install=yes_without_prompt
 
           # list existing deployments
-          deployment_list=$(az iot edge deployment list --hub-name ${{ github.event.inputs.iothub_name }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
+          deployment_list=$(az iot edge deployment list --hub-name ${{ secrets.IOTHUB_NAME }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
 
           echo "Edge Device Deployment"
           echo "-----------------------------------------"
@@ -69,7 +65,7 @@ jobs:
             echo "Creating new edge device deployment..."
             az iot edge deployment create \
               --deployment-id ${{ env.deployment_id }} \
-              --hub-name ${{ github.event.inputs.iothub_name }} \
+              --hub-name ${{ secrets.IOTHUB_NAME }} \
               --content temp.json \
               --target-condition "tags.deployment='${{ env.deployment_id }}'" \
               --layered
@@ -79,11 +75,11 @@ jobs:
             echo "Replacing existing device deployment..."
             az iot edge deployment delete \
               --deployment-id ${{ env.deployment_id }} \
-              --hub-name ${{ github.event.inputs.iothub_name }}
+              --hub-name ${{ secrets.IOTHUB_NAME }}
 
             az iot edge deployment create \
               --deployment-id ${{ env.deployment_id }} \
-              --hub-name ${{ github.event.inputs.iothub_name }} \
+              --hub-name ${{ secrets.IOTHUB_NAME }} \
               --content temp.json \
               --target-condition "tags.deployment='${{ env.deployment_id }}'" \
               --layered
@@ -92,7 +88,7 @@ jobs:
       - name: Create IoT Edge Device
         run: |
           # list existing devices
-          device_list=$(az iot hub device-identity list --hub-name ${{ github.event.inputs.iothub_name }} | sed -nr 's/\s*"deviceId": "(.*)".*/|\1|/p' )
+          device_list=$(az iot hub device-identity list --hub-name ${{ secrets.IOTHUB_NAME }} | sed -nr 's/\s*"deviceId": "(.*)".*/|\1|/p' )
 
           echo "Edge Device Registration"
           echo "-----------------------------------------"
@@ -108,7 +104,7 @@ jobs:
           if [ -z "${matched}" ]; then
             echo "Creating new edge device..."
             az iot hub device-identity create \
-              --hub-name ${{ github.event.inputs.iothub_name }} \
+              --hub-name ${{ secrets.IOTHUB_NAME }} \
               --device-id ${{ github.event.inputs.edge_device_id }} \
               --edge-enabled true \
               --am shared_private_key
@@ -117,6 +113,6 @@ jobs:
           # update the deployment tag as specified
           echo "Updating tags for target deployment..."
           az iot hub device-twin update \
-            --hub-name ${{ github.event.inputs.iothub_name }} \
+            --hub-name ${{ secrets.IOTHUB_NAME }} \
             --device-id ${{ github.event.inputs.edge_device_id }} \
             --tags "{\"deployment\":\"${{ env.deployment_id }}\"}"
