@@ -1,5 +1,5 @@
 # pull official base image
-FROM python:3.10-slim-bullseye
+FROM --platform=linux/arm64 python:3.10-slim-bullseye
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
