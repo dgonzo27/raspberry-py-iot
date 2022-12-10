@@ -57,6 +57,7 @@ jobs:
         with:
           context: ./modules/sensor_filter
           push: true
+          platforms: linux/arm64
           tags: ${{ env.docker_hub_username }}/sensor-filter:${{ github.event.inputs.image_tag_version }}
 
   update-edge-modules:
