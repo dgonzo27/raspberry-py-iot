@@ -7,7 +7,9 @@
             "settings": {
               "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.4.4"
             },
-            "env": {},
+            "env": {
+              "MessageCount": -1
+            },
             "status": "running",
             "restartPolicy": "always",
             "type": "docker",
@@ -92,7 +94,7 @@
     "SimulatedTemperatureSensor": {
       "properties.desired": {
         "SendData": true,
-        "SendInterval": 5
+        "SendInterval": 30
       }
     },
     "SensorFilter": {
