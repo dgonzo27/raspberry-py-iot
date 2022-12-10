@@ -7,7 +7,10 @@
             "settings": {
               "image": "<DOCKER_USER>/sensor-filter:<IMAGE_TAG_VERSION>"
             },
-            "env": {},
+            "env": {
+              "TEMPERATURE_THRESHOLD": "20",
+              "MESSAGE_INTERVAL": "5"
+            },
             "status": "running",
             "restartPolicy": "always",
             "type": "docker",
