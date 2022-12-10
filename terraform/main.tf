@@ -9,7 +9,7 @@ resource "azurerm_storage_container" "iothub_output" {
 
 # IoT Hub
 resource "azurerm_iothub" "iothub" {
-  name                = ""
+  name                = var.iothub_name
   resource_group_name = var.resource_group_name
   location            = var.resource_group_location
 
