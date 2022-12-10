@@ -2,59 +2,62 @@
 
 import asyncio
 import os
-import random
-import uuid
+from typing import Union
 
 from azure.iot.device.aio import IoTHubModuleClient
-from azure.iot.device import Message
 from iot.edge.logger import init_logging
 
+from utils import filter_temperature_message
 from version import __version__
 
-TEMPERATURE = 20.0
-MESSAGES = 10
+DEV_IOTHUB_DEVICE_CONNECTION_STRING: str = os.getenv(
+    "DEV_IOTHUB_DEVICE_CONNECTION_STRING"
+)
 
 # setup logging
 logger = init_logging(module_name="sensor_filter")
 
 
-async def main() -> None:
+def create_client() -> Union[IoTHubModuleClient, None]:
+    """instantiate an IoT Hub client"""
+    try:
+        if DEV_IOTHUB_DEVICE_CONNECTION_STRING is not None:
+            if DEV_IOTHUB_DEVICE_CONNECTION_STRING == "change_me":
+                logger.error(
+                    "the IoT hub device connection string has not been defined...\n"
+                    "please set this connection string in the docker-compose.yml file "
+                    "if you are developing locally"
+                )
+                return None
+            client = IoTHubModuleClient.create_from_connection_string(
+                DEV_IOTHUB_DEVICE_CONNECTION_STRING
+            )
+        else:
+            client = IoTHubModuleClient.create_from_edge_environment()
+        return client
+    except Exception as ex:
+        logger.exception(f"unexpected exception occurred: {ex}")
+        logger.error("unable to instantiate client")
+        return None
+
+
+def main() -> None:
     """iot edge device module entrypoint"""
     logger.info("IoT Edge Module - sensor_filter")
-    logger.info(f"running module v{__version__}")
+    logger.info("enter ctrl-c to exit")
+    logger.info(f"running module v{__version__}\n\n")
 
-    cnx_string = os.getenv("DEV_IOTHUB_DEVICE_CONNECTION_STRING")
-    if cnx_string:
-        if cnx_string == "change_me":
-            logger.error(
-                "the IoT hub device connection string has not been defined...\n"
-                "please set this connection string in the docker-compose.yml file "
-                "if you are developing locally"
-            )
-            return
-        client = IoTHubModuleClient.create_from_connection_string(cnx_string)
-    else:
-        client = IoTHubModuleClient.create_from_edge_environment()
-
-    # connect the client
-    await client.connect()
-
-    async def send_test_message(i: int) -> None:
-        """send a device to cloud message"""
-        logger.info(f"sending message #{i}")
-        msg = Message(f"raspberry pi cpu temperature {i}")
-        msg.message_id = uuid.uuid4()
-        msg.correlation_id = "correlation-1234"
-        msg.custom_properties["temperature"] = str(TEMPERATURE + (random.random() * 15))
-        await client.send_message(msg)
-        logger.info(f"done sending message #{i}")
-
-    # send `messages_to_send` in parallel
-    await asyncio.gather(*[send_test_message(i) for i in range(1, MESSAGES + 1)])
-
-    # shut down the client
-    await client.shutdown()
+    client = create_client()
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(filter_temperature_message(client, logger))
+    except KeyboardInterrupt:
+        logger.info("sensor_filter module stopped by user")
+    finally:
+        logger.warning("shutting down sensor_filter module")
+        loop.run_until_complete(client.shutdown())
+        loop.close()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

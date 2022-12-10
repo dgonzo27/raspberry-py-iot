@@ -6,7 +6,7 @@ on:
       iothub_name:
         description: The name of the IoT Hub to receive this deployment.
         required: true
-        default: "dgiothub247"
+        default: "dgiothubuseast001"
 
       edge_device_id:
         description: The ID of the edge device.

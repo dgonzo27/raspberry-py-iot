@@ -6,7 +6,7 @@ on:
       iothub_name:
         description: The name of the IoT Hub to receive this deployment.
         required: true
-        default: "dgiothub247"
+        default: "dgiothubuseast001"
 
       edge_device_id:
         description: The ID of the edge device.
@@ -40,7 +40,7 @@ jobs:
       - name: Create IoT Edge Device Deployment
         run: |
           az config set extension.use_dynamic_install=yes_without_prompt
-          
+
           # list existing deployments
           deployment_list=$(az iot edge deployment list --hub-name ${{ github.event.inputs.iothub_name }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
 
