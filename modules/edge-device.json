@@ -73,12 +73,7 @@
     "$edgeHub": {
       "properties.desired": {
         "routes": {
-          "route": {
-            "route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
-          },
-          "SimulatedTemperatureSensorToModule": {
-            "route": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO /modules/SensorFilter/inputs/input1"
-          }
+          "route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
         },
         "schemaVersion": "1.1",
         "storeAndForwardConfiguration": {
