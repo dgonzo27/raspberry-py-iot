@@ -7,9 +7,6 @@
             "settings": {
               "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.4.4"
             },
-            "env": {
-              "MessageCount": 800
-            },
             "status": "running",
             "restartPolicy": "always",
             "type": "docker",
@@ -76,13 +73,10 @@
       "properties.desired": {
         "routes": {
           "route": {
-            "route": "FROM /messages/* INTO $upstream"
+            "route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
           },
           "SimulatedTemperatureSensorToModule": {
             "route": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO /modules/SensorFilter/inputs/input1"
-          },
-          "sensor-filter-route": {
-            "route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
           }
         },
         "schemaVersion": "1.1",
@@ -94,7 +88,7 @@
     "SimulatedTemperatureSensor": {
       "properties.desired": {
         "SendData": true,
-        "SendInterval": 30
+        "SendInterval": 10
       }
     },
     "SensorFilter": {
