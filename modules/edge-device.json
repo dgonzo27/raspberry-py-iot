@@ -73,12 +73,8 @@
     "$edgeHub": {
       "properties.desired": {
         "routes": {
-          "route": {
-            "route": "FROM /messages/* INTO $upstream"
-          },
-          "SimulatedTemperatureSensorToModule": {
-            "route": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO /modules/SensorFilter/inputs/input1"
-          }
+          "sensor-to-module": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO BrokeredEndpoint(\"/modules/SensorFilter/inputs/input1\")",
+          "sensor-filter-route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
         },
         "schemaVersion": "1.1",
         "storeAndForwardConfiguration": {
@@ -88,8 +84,8 @@
     },
     "SimulatedTemperatureSensor": {
       "properties.desired": {
-          "SendData": true,
-          "SendInterval": 5
+        "SendData": true,
+        "SendInterval": 10
       }
     },
     "SensorFilter": {
