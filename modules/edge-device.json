@@ -3,17 +3,6 @@
     "$edgeAgent": {
       "properties.desired": {
         "modules": {
-          "SimulatedTemperatureSensor": {
-            "settings": {
-              "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.4.4"
-            },
-            "env": {},
-            "status": "running",
-            "restartPolicy": "always",
-            "type": "docker",
-            "imagePullPolicy": "on-create",
-            "startupOrder": 3
-          },
           "SensorFilter": {
             "settings": {
               "image": "<DOCKER_USER>/sensor-filter:<IMAGE_TAG_VERSION>"
@@ -73,19 +62,12 @@
     "$edgeHub": {
       "properties.desired": {
         "routes": {
-          "sensor-to-module": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO BrokeredEndpoint(\"/modules/SensorFilter/inputs/input1\")",
-          "sensor-filter-route": "FROM BrokeredEndpoint(\"/modules/SensorFilter/outputs/output1\") INTO $upstream"
+          "sensor-filter-route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
         },
         "schemaVersion": "1.1",
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
         }
-      }
-    },
-    "SimulatedTemperatureSensor": {
-      "properties.desired": {
-        "SendData": true,
-        "SendInterval": 10
       }
     },
     "SensorFilter": {

@@ -1,73 +1,30 @@
 """sensor filter module"""
 
+import asyncio
 import os
-import signal
-import threading
-from typing import Any, Dict, Optional
+import random
+import uuid
 
 from azure.iot.device.aio import IoTHubModuleClient
+from azure.iot.device import Message
 from iot.edge.logger import init_logging
 
 from version import __version__
 
+TEMPERATURE = 20.0
+MESSAGES = 10
+
 # setup logging
 logger = init_logging(module_name="sensor_filter")
 
-RECEIVED_MESSAGES = 0
 
-
-def create_client(dev: Optional[bool] = False) -> IoTHubModuleClient:
-    """instantiate module client and listener"""
-    if dev:
-        client = IoTHubModuleClient.create_from_connection_string(
-            os.getenv("DEV_IOTHUB_DEVICE_CONNECTION_STRING")
-        )
-    else:
-        client = IoTHubModuleClient.create_from_edge_environment()
-
-    def receive_message_handler(message: Dict[str, Any]) -> None:
-        global RECEIVED_MESSAGES
-
-        # this function only handles messages sent to "input1"
-        if message.input_name == "input1":
-            RECEIVED_MESSAGES += 1
-            logger.info("Message received on input1")
-            logger.info(f"  Data: <<{message.data}>>")
-            logger.info(f"  Properties: {message.custom_properties}")
-            logger.info(f"  Total calls received: {RECEIVED_MESSAGES}")
-            logger.info("Forwarding message to output1...")
-
-            client.send_message_to_output(message, "output1")
-            logger.info("Message successfully forwarded!")
-        else:
-            logger.info(f"Message received on unknown input: {message.input_name}")
-
-    try:
-        client.on_message_received = receive_message_handler
-    except:
-        client.shutdown()
-    return client
-
-
-def main() -> None:
+async def main() -> None:
     """iot edge device module entrypoint"""
     logger.info("IoT Edge Module - sensor_filter")
     logger.info(f"running module v{__version__}")
 
-    # event indicating client stop
-    stop_event = threading.Event()
-
-    def module_termination_handler(signal: signal, frame: signal.SIGTERM) -> None:
-        """cleanup module when terminated by edge"""
-        print("module stopped by edge")
-        stop_event.set()
-
-    # set the edge termination handler
-    signal.signal(signal.SIGTERM, module_termination_handler)
-
-    dev = False  # running locally?
-    if os.getenv("DEV_IOTHUB_DEVICE_CONNECTION_STRING"):
-        cnx_string = os.getenv("DEV_IOTHUB_DEVICE_CONNECTION_STRING")
+    cnx_string = os.getenv("DEV_IOTHUB_DEVICE_CONNECTION_STRING")
+    if cnx_string:
         if cnx_string == "change_me":
             logger.error(
                 "the IoT hub device connection string has not been defined...\n"
@@ -75,23 +32,29 @@ def main() -> None:
                 "if you are developing locally"
             )
             return
-        dev = True  # yes, we are running locally
+        client = IoTHubModuleClient.create_from_connection_string(cnx_string)
+    else:
+        client = IoTHubModuleClient.create_from_edge_environment()
 
-    # instantiate client
-    client = create_client(dev=dev)
+    # connect the client
+    await client.connect()
 
-    try:
-        # this will be triggered by Edge termination signal
-        logger.info("module is listening for invocations")
-        stop_event.wait()
-    except Exception as ex:
-        logger.exception(f"unexpected exception occurred: {ex}")
-        logger.error("unable to listen for invocations")
-        raise
-    finally:
-        logger.info("shutting down module listener...")
-        client.shutdown()
+    async def send_test_message(i: int) -> None:
+        """send a device to cloud message"""
+        logger.info(f"sending message #{i}")
+        msg = Message(f"raspberry pi cpu temperature {i}")
+        msg.message_id = uuid.uuid4()
+        msg.correlation_id = "correlation-1234"
+        msg.custom_properties["temperature"] = str(TEMPERATURE + (random.random() * 15))
+        await client.send_message(msg)
+        logger.info(f"done sending message #{i}")
+
+    # send `messages_to_send` in parallel
+    await asyncio.gather(*[send_test_message(i) for i in range(1, MESSAGES + 1)])
+
+    # shut down the client
+    await client.shutdown()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
