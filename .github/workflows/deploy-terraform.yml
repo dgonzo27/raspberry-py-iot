@@ -1,0 +1,134 @@
+name: Deploy Terraform
+
+on: workflow_dispatch
+
+env:
+  TERRAFORM_DIR: terraform/
+  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
+  STORAGE_ACCOUNT: ${{ secrets.STORAGE_ACCOUNT }}
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    environment: demo
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_SP_CREDENTIALS }}
+
+      - name: Setup Authentication for Terraform
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=$(az account show --query="id" -o tsv)" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=$(az account show --query="user.name" -o tsv)" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=$(jq '.clientSecret' -r <<< '${{ secrets.AZURE_SP_CREDENTIALS }}')" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=$(az account show --query="tenantId" -o tsv)" >> $GITHUB_ENV
+          echo "ARM_SKIP_PROVIDER_REGISTRATION=true" >> $GITHUB_ENV
+
+      - name: Inject Environment Variables
+        run: |
+          echo "TF_VAR_service_principal_secret=$(jq '.clientSecret' -r <<< '${{ secrets.AZURE_SP_CREDENTIALS }}')" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_name=${{ secrets.RESOURCE_GROUP }}" >> $GITHUB_ENV
+          echo "TF_VAR_storage_account_name=${{ secrets.STORAGE_ACCOUNT }}" >> $GITHUB_ENV
+          echo "TF_VAR_iothub_name=${{ secrets.IOTHUB_NAME }}" >> $GITHUB_ENV
+
+      - name: Verify Terraform Backend
+        run: |
+          chmod +x $GITHUB_WORKSPACE/.github/backend-setup.sh
+          $GITHUB_WORKSPACE/.github/backend-setup.sh -g ${{ env.RESOURCE_GROUP }} -s ${{ env.STORAGE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Init Terraform
+        run: |
+          terraform init \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="storage_account_name=${{ env.STORAGE_ACCOUNT }}" \
+            -backend-config="resource_group_name=${{ env.RESOURCE_GROUP }}" \
+            -backend-config="container_name=terraform-state"
+
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Plan Terraform
+        id: plan-terraform
+        continue-on-error: true
+        run: terraform plan -var-file=terraform.tfvars -out=tf.plan
+
+      - name: Validate Plan
+        if: steps.plan-terraform.outcome == 'failure'
+        run: exit 1
+
+      - name: Publish Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: tf-plan
+          path: ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/tf.plan
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: demo
+    needs: terraform-plan
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_SP_CREDENTIALS }}
+
+      - name: Setup Authentication for Terraform
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=$(az account show --query="id" -o tsv)" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=$(az account show --query="user.name" -o tsv)" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=$(jq '.clientSecret' -r <<< '${{ secrets.AZURE_SP_CREDENTIALS }}')" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=$(az account show --query="tenantId" -o tsv)" >> $GITHUB_ENV
+
+      - name: Download Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: tf-plan
+          path: ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="storage_account_name=${{ env.STORAGE_ACCOUNT }}" \
+            -backend-config="resource_group_name=${{ env.RESOURCE_GROUP }}" \
+            -backend-config="container_name=terraform-state"
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tf.plan
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
