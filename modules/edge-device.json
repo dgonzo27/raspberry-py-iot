@@ -88,8 +88,8 @@
     },
     "SimulatedTemperatureSensor": {
       "properties.desired": {
-          "SendData": true,
-          "SendInterval": 5
+        "SendData": true,
+        "SendInterval": 5
       }
     },
     "SensorFilter": {
