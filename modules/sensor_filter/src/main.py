@@ -37,7 +37,7 @@ def create_client(dev: Optional[bool] = False) -> IoTHubModuleClient:
             logger.info(f"  Total calls received: {RECEIVED_MESSAGES}")
             logger.info("Forwarding message to output1...")
 
-            client.send_message(message, "output1")
+            client.send_message_to_output(message, "output1")
             logger.info("Message successfully forwarded!")
         else:
             logger.info(f"Message received on unknown input: {message.input_name}")
