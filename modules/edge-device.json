@@ -78,6 +78,9 @@
           },
           "SimulatedTemperatureSensorToModule": {
             "route": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO /modules/SensorFilter/inputs/input1"
+          },
+          "sensor-filter-route": {
+            "route": "FROM /messages/modules/SensorFilter/* INTO $upstream"
           }
         },
         "schemaVersion": "1.1",
