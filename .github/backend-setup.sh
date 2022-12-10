@@ -45,7 +45,7 @@ else
         -g "$resource_group_name" \
         --name "$storage_account_name" \
         --sku Standard_LRS \
-        --location "eastus2"
+        --location "eastus2" \
         --encryption-services blob \
         -o table || exit 1
     echo "Storage account ($storage_account_name) was created successfully!"
