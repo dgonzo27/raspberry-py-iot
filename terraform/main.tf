@@ -14,7 +14,7 @@ resource "azurerm_iothub" "iothub" {
   location            = var.resource_group_location
 
   sku {
-    name     = "B1"
+    name     = "S1"
     capacity = 1
   }
 
