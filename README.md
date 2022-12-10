@@ -1,6 +1,6 @@
 # raspberry-py-iot
 
-[![python version](https://img.shields.io/badge/python_v3.10-blue?logo=python&logoColor=yellow)](https://www.python.org/) [![pre-commit](https://img.shields.io/badge/pre--commit-blue?logo=pre-commit&logoColor=FAB040)](https://pre-commit.com/) [![CI_CD GitHub_Actions](https://img.shields.io/badge/GitHub_Actions-blue?logo=githubactions&logoColor=black)](https://github.com/features/actions)
+[![python version](https://img.shields.io/badge/python_v3.10-blue?logo=python&logoColor=yellow)](https://www.python.org/) [![pre-commit](https://img.shields.io/badge/pre--commit-blue?logo=pre-commit&logoColor=FAB040)](https://pre-commit.com/) [![CI_CD GitHub_Actions](https://img.shields.io/badge/GitHub_Actions-blue?logo=githubactions&logoColor=black)](https://github.com/features/actions) [![provider azure](https://img.shields.io/badge/provider-azure-blue?logo=microsoftazure&logoColor=0078D4)](https://azure.microsoft.com/en-us/) [![iac terraform](https://img.shields.io/badge/iac-terraform-blue?logo=terraform&logoColor=7B42BC)](https://www.terraform.io)
 
 This repository contains the code and instructions for running a simulated Python-based temperature sensor on a Raspberry Pi 4 through Azure IoT Edge.
 
