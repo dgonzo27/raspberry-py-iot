@@ -1,16 +1,16 @@
 name: Deploy Modules
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_tag_version:
-        description: Docker image tag version.
-        required: true
-        default: "1.0.0"
+  release:
+    types: [published]
 
 env:
   docker_hub_username: "${{ secrets.DOCKERHUB_USER }}"
   docker_hub_password: "${{ secrets.DOCKERHUB_TOKEN }}"
+  iothub_name: "dgiothubuseast001"
+  edge_device_id: "raspberry-edge-device"
+  deployment_id: "raspberry-edge-deployment"
+  device_json: "config/scripts/edge-device.json"
 
 defaults:
   run:
@@ -46,4 +46,96 @@ jobs:
           context: ./modules/sensor_filter
           push: true
           platforms: linux/arm64
-          tags: ${{ env.docker_hub_username }}/sensor-filter:${{ github.event.inputs.image_tag_version }}
+          tags: ${{ env.docker_hub_username }}/sensor-filter:${{ github.event.release.tag_name }}
+
+  update-edge-device:
+    name: Update Edge Device
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_SP_CREDENTIALS }}
+
+      - name: Create IoT Edge Device Deployment
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+
+          # list existing deployments
+          deployment_list=$(az iot edge deployment list --hub-name ${{ env.iothub_name }} | sed -nr 's/\s*"id": "(.*)".*/|\1|/p' )
+
+          echo "Edge Device Deployment"
+          echo "-----------------------------------------"
+          echo "Deployment:   ${{ env.deployment_id }}"
+          echo "Modules:      ${{ env.device_json }}"
+          echo "-----------------------------------------"
+
+          cp ${{ env.device_json }} temp.json
+          sed -i "s|<DOCKER_USER>|${{ env.docker_hub_username }}|" temp.json
+          sed -i "s|<IMAGE_TAG_VERSION>|${{ github.event.release.tag_name }}|" temp.json
+
+          # check for matching (existing) deployments
+          matched=$( echo "${deployment_list}" | sed -nr "s/\|${{ env.deployment_id }}\|/found/p" )
+
+          # if there's no match, create a new device deployment
+          if [ -z $matched ]; then
+            echo "Creating new edge device deployment..."
+            az iot edge deployment create \
+              --deployment-id ${{ env.deployment_id }} \
+              --hub-name ${{ env.iothub_name }} \
+              --content temp.json \
+              --target-condition "tags.deployment='${{ env.deployment_id }}'" \
+              --layered
+
+          # otherwise, replace the device deployment
+          else
+            echo "Replacing existing device deployment..."
+            az iot edge deployment delete \
+              --deployment-id ${{ env.deployment_id }} \
+              --hub-name ${{ env.iothub_name }}
+
+            az iot edge deployment create \
+              --deployment-id ${{ env.deployment_id }} \
+              --hub-name ${{ env.iothub_name }} \
+              --content temp.json \
+              --target-condition "tags.deployment='${{ env.deployment_id }}'" \
+              --layered
+          fi
+
+      - name: Create IoT Edge Device
+        run: |
+          # list existing devices
+          device_list=$(az iot hub device-identity list --hub-name ${{ env.iothub_name }} | sed -nr 's/\s*"deviceId": "(.*)".*/|\1|/p' )
+
+          echo "Edge Device Registration"
+          echo "-----------------------------------------"
+          echo "Device ID:       ${{ env.edge_device_id }}"
+          echo "Deployment:      ${{ env.deployment_id }}"
+          echo "Authentication:  shared_private_key"
+          echo "-----------------------------------------"
+
+          # check for matching (existing) devices
+          matched=$( echo "${device_list}" | sed -nr "s/\|${{ env.edge_device_id }}\|/found/p" )
+
+          # if there's no match, create a new device
+          if [ -z "${matched}" ]; then
+            echo "Creating new edge device..."
+            az iot hub device-identity create \
+              --hub-name ${{ env.iothub_name }} \
+              --device-id ${{ env.edge_device_id }} \
+              --edge-enabled true \
+              --am shared_private_key
+          fi
+
+          # update the deployment tag as specified
+          echo "Updating tags for target deployment..."
+          az iot hub device-twin update \
+            --hub-name ${{ env.iothub_name }} \
+            --device-id ${{ env.edge_device_id }} \
+            --tags "{\"deployment\":\"${{ env.deployment_id }}\"}"

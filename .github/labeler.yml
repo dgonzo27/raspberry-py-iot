@@ -1,0 +1,15 @@
+documentation:
+  - README.md
+  - any: ["./**/*.md"]
+
+github-actions:
+  - any: [".github/**/*.yml"]
+
+iot-edge-config:
+  - config/*
+
+iot-edge-modules:
+  - modules/*
+
+infrastructure-as-code:
+  - terraform/*
