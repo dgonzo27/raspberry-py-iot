@@ -2,9 +2,6 @@
 
 echo "debconf debconf/frontend select Noninteractive" | sudo debconf-set-selections
 
-# variables
-device_cnx_str="<DEVICE_CNX_STR>"
-
 echo "installing packages..."
 sudo apt-get install wget -y
 wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O ./packages-microsoft-prod.deb
@@ -24,7 +21,7 @@ sudo dpkg -i aziot-edge.deb
 
 echo "restarting iot edge runtime with new config..."
 echo ""
-sudo iotedge config mp --connection-string '${device_cnx_str}'
+sudo iotedge config mp --connection-string '<DEVICE_CNX_STR>'
 sudo iotedge config apply
 
 echo "done!"

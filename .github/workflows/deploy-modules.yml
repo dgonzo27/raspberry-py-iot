@@ -7,7 +7,7 @@ on:
 env:
   docker_hub_username: "${{ secrets.DOCKERHUB_USER }}"
   docker_hub_password: "${{ secrets.DOCKERHUB_TOKEN }}"
-  iothub_name: "${{ secrets.IOTHUB_NAME"
+  iothub_name: "${{ secrets.IOTHUB_NAME }}"
   edge_device_id: "raspberry-edge-device"
   deployment_id: "raspberry-edge-deployment"
   device_json: "config/scripts/edge-device.json"
