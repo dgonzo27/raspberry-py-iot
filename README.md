@@ -6,7 +6,7 @@ This repository contains the code and instructions for running a simulated Pytho
 
 ## Steps
 
-To get started with this solution, follow the (youtube video)[] or go in order of the directories listed below.
+To get started with this solution, follow the [youtube video]() or go in order of the directories listed below.
 
 1. [terraform](https://github.com/dgonzo27/raspberry-py-iot/tree/master/terraform)
 2. [config](https://github.com/dgonzo27/raspberry-py-iot/tree/master/config)
