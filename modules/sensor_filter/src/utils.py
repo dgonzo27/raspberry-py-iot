@@ -11,7 +11,7 @@ from azure.iot.device.aio import IoTHubModuleClient
 from azure.iot.device import Message
 
 TEMPERATURE_THRESHOLD: Union[int, str] = float(os.getenv("TEMPERATURE_THRESHOLD"))
-MESSAGE_INTERVAL: Union[int, str] = str(os.getenv("MESSAGE_INTERVAL"))
+MESSAGE_INTERVAL: Union[int, str] = int(os.getenv("MESSAGE_INTERVAL"))
 
 
 async def filter_temperature_message(
