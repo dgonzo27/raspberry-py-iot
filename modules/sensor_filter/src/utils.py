@@ -22,7 +22,7 @@ async def filter_temperature_message(
 
     while True:
         logger.debug("checking raspberry pi cpu temperature...")
-        temperature = (TEMPERATURE_THRESHOLD - 14.0) + (random.random() * 15.0)
+        temperature = (TEMPERATURE_THRESHOLD - 14.0) + (random.randint(0, 10) * 15.0)
         if temperature > TEMPERATURE_THRESHOLD:
             logger.warning("temperature is above threshold!")
             id = uuid.uuid4()
