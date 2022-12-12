@@ -10,7 +10,7 @@ env:
   iothub_name: "${{ secrets.IOTHUB_NAME }}"
   edge_device_id: "raspberry-edge-device"
   deployment_id: "raspberry-edge-device-deployment"
-  device_json: "config/scripts/edge-device.json"
+  device_json: "modules/edge-device.json"
 
 defaults:
   run:

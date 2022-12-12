@@ -8,8 +8,12 @@
               "image": "<DOCKER_USER>/sensor-filter:<IMAGE_TAG_VERSION>"
             },
             "env": {
-              "TEMPERATURE_THRESHOLD": "20",
-              "MESSAGE_INTERVAL": "5"
+              "TEMPERATURE_THRESHOLD": {
+                "value": "20"
+              },
+              "MESSAGE_INTERVAL": {
+                "value": "5"
+              }
             },
             "status": "running",
             "restartPolicy": "always",

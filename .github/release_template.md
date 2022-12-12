@@ -1,4 +1,4 @@
-## sensor-filter v1.0.0 (12/10/2022)
+## raspberry-py-iot v1.0.0 (12/10/2022)
 
 **Deployed by @dgonzo27 on December 10th at 12:04 AM CDT, 2022**
 
